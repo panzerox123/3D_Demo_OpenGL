@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+int THETA = 0;
 
 float rand_color_func(){
 	return (float)rand()/(float)RAND_MAX;
@@ -107,12 +108,14 @@ class Cube
 public:
 	void transform()
 	{
+		glPushMatrix();
 		displayCube();
 		glRotatef(1, 1, 1, 0);
 		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
 		GLfloat mat_shininess[] = {3.0};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+		glPopMatrix();
 	}
 } cube;
 
@@ -140,7 +143,6 @@ void reshape_function(int w, int h)
 	else
 		glOrtho(-3 * (GLfloat)w / (GLfloat)h,
 				3 * (GLfloat)w / (GLfloat)h, -3, 3, -10.0, 10.0);
-	glPointSize(3);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -148,12 +150,16 @@ void reshape_function(int w, int h)
 void display_function()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
+	//gluLookAt(1, 0, 0, 1, 2, 1, 0, 1, 0);
 	cube.transform();
 	glFlush();
 }
 
 void timer_function(int t)
 {
+	THETA = (THETA+1)%360;
 	glutPostRedisplay();
 	glutTimerFunc(17, timer_function, t);
 }
