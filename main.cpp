@@ -12,13 +12,14 @@ double CAM_Y = 1;
 double CAM_Z = 1;
 float INCLININATION = 0;
 float AZIMUTH = 0;
-int RADIUS = 1;
+int RADIUS = 5;
 float ZOOM = 12;
 int WIDTH = 0;
 int HEIGHT = 0;
 bool MOUSE_RIGHT_HELD_DOWN = false;
 int MOUSE_X = 0;
 int MOUSE_Y = 0;
+int UP_FLAG = 1;
 
 float rand_color_func()
 {
@@ -27,9 +28,19 @@ float rand_color_func()
 
 class Cube
 {
+	bool pause;
 	int rotate_angle;
 	float rand_colors[12][3];
-	void displayCube()
+	int x_rotate = 0;
+	int y_rotate = 0;
+	int z_rotate = 0;
+	float x_translate = 0;
+	float y_translate = 0;
+	float z_translate = 0;
+	bool x_dir = false;
+	bool y_dir = false;
+	bool z_dir = false;
+	void display()
 	{
 		glBegin(GL_TRIANGLES);
 		glColor3fv(rand_colors[0]);
@@ -123,6 +134,26 @@ class Cube
 		glEnd();
 	}
 
+	void randomize()
+	{
+		srand(time(NULL));
+		x_rotate = rand() % 2;
+		y_rotate = rand() % 2;
+		z_rotate = rand() % 2;
+		x_dir = rand() % 3 - 1;
+		y_dir = rand() % 3 - 1;
+		z_dir = rand() % 3 - 1;
+	}
+
+	void transforms()
+	{
+		if (!pause)
+		{
+			glRotatef(rotate_angle, x_rotate, y_rotate, z_rotate);
+			glTranslatef(x_translate, y_translate, z_translate);
+		}
+	}
+
 public:
 	Cube()
 	{
@@ -133,29 +164,70 @@ public:
 			rand_colors[i][1] = rand_color_func();
 			rand_colors[i][2] = rand_color_func();
 		}
+		pause = false;
+		randomize();
 	}
 
-	void increment_rotate_angle()
+	void pause_trans()
+	{
+		pause = true;
+	}
+
+	void unpause_trans()
+	{
+		pause = false;
+	}
+
+	void increment_trans()
 	{
 		rotate_angle = (rotate_angle + 1) % 360;
+		if (x_translate >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
+		{
+			if (abs(x_translate) > 5)
+			{
+				x_dir = -x_dir;
+			}
+			if (abs(y_translate) > 5)
+			{
+				y_dir = -y_dir;
+			}
+			if (abs(z_translate) > 5)
+			{
+				z_dir = -z_dir;
+			}
+			//randomize();
+		}
+		if (x_dir == 1)
+			x_translate += 0.1;
+		else if (x_dir == -1)
+			x_translate -= 0.1;
+		if (y_dir == 1)
+			y_translate += 0.1;
+		else if (y_dir == -1)
+			y_translate -= 0.1;
+		if (z_dir == 1)
+			z_translate += 0.1;
+		else if (z_dir == -1)
+			z_translate -= 0.1;
 	}
 
-	void transform()
+	void run()
 	{
 		glPushMatrix();
-		glRotatef(this->rotate_angle, 1, 0, 0);
+		//glRotatef(this->rotate_angle, 1, 0, 0);
+		transforms();
 		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
 		GLfloat mat_shininess[] = {3.0};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-		displayCube();
+		display();
 		glPopMatrix();
 	}
 } cube;
 
 void drag_camera()
 {
-	std::cout << MOUSE_RIGHT_HELD_DOWN << std::endl;
+	//std::cout << MOUSE_RIGHT_HELD_DOWN << std::endl;
 	if (MOUSE_RIGHT_HELD_DOWN)
 	{
 		AZIMUTH += (float)(MOUSE_X - mouse_state_x) / WIDTH;
@@ -174,6 +246,9 @@ void lighting_init(void)
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 }
 
 void reshape_function(int w, int h)
@@ -196,25 +271,37 @@ void reshape_function(int w, int h)
 
 void display_function()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, 1, 0);
-	cube.transform();
-	glutWireSphere(10,25,25);
+	if (int(INCLININATION) % 360 >= 90 && int(INCLININATION) % 360 <= 270)
+		UP_FLAG = -1;
+	else
+		UP_FLAG = 1;
+	//std::cout << UP_FLAG << std::endl;
+	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, UP_FLAG, 0);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);
+	cube.run();
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilMask(0x00);
+	glDisable(GL_DEPTH_TEST);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glEnable(GL_DEPTH_TEST);
+	glutWireSphere(10, 25, 25);
 	glFlush();
 }
 
 void timer_function(int t)
 {
 	// Camera Control
-	float Y_DIS = RADIUS * cos((double)INCLININATION * PI / 180);
-	CAM_Y = RADIUS * sin((double)INCLININATION * PI / 180);
+	float Y_DIS = 1 * cos((double)INCLININATION * PI / 180);
+	CAM_Y = 1 * sin((double)INCLININATION * PI / 180);
 	CAM_X = Y_DIS * cos((double)AZIMUTH * PI / 180);
 	CAM_Z = Y_DIS * sin((double)AZIMUTH * PI / 180);
 	drag_camera();
 	glutPostRedisplay();
-	//cube.increment_rotate_angle();
+	cube.increment_trans();
 	glutTimerFunc(17, timer_function, t);
 }
 
@@ -262,7 +349,7 @@ void mouse_drag_motion_function(int x, int y)
 {
 	MOUSE_X = x;
 	MOUSE_Y = y;
-	std::cout << MOUSE_X << " " << MOUSE_Y << std::endl;
+	//std::cout << MOUSE_X << " " << MOUSE_Y << std::endl;
 }
 
 void mouse_zoom_function(int wheel, int direction, int x, int y)
@@ -283,7 +370,7 @@ int main(int argc, char *argv[])
 	srand(time(NULL));
 	glutInit(&argc, argv);
 	glutInitWindowSize(800, 800);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 	glutCreateWindow("OpenGL Assignment");
 	lighting_init();
 	glutDisplayFunc(display_function);
