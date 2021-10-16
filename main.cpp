@@ -13,13 +13,15 @@ double CAM_Z = 1;
 float INCLININATION = 0;
 float AZIMUTH = 0;
 int RADIUS = 5;
-float ZOOM = 12;
+float ZOOM = 10;
 int WIDTH = 0;
 int HEIGHT = 0;
 bool MOUSE_RIGHT_HELD_DOWN = false;
 int MOUSE_X = 0;
 int MOUSE_Y = 0;
 int UP_FLAG = 1;
+
+bool cube_flag = false;
 
 float rand_color_func()
 {
@@ -37,9 +39,9 @@ class Cube
 	float x_translate = 0;
 	float y_translate = 0;
 	float z_translate = 0;
-	bool x_dir = false;
-	bool y_dir = false;
-	bool z_dir = false;
+	int x_dir = 0;
+	int y_dir = 0;
+	int z_dir = 0;
 	void display()
 	{
 		glBegin(GL_TRIANGLES);
@@ -147,11 +149,8 @@ class Cube
 
 	void transforms()
 	{
-		if (!pause)
-		{
-			glRotatef(rotate_angle, x_rotate, y_rotate, z_rotate);
-			glTranslatef(x_translate, y_translate, z_translate);
-		}
+		glRotatef(rotate_angle, x_rotate, y_rotate, z_rotate);
+		glTranslatef(x_translate, y_translate, z_translate);
 	}
 
 public:
@@ -180,35 +179,30 @@ public:
 
 	void increment_trans()
 	{
+		if(pause) return;
 		rotate_angle = (rotate_angle + 1) % 360;
-		if (x_translate >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
+		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
 		{
-			if (abs(x_translate) > 5)
+			if (abs(x_translate) >= 5)
 			{
+				x_translate = x_dir*RADIUS;
 				x_dir = -x_dir;
 			}
-			if (abs(y_translate) > 5)
+			if (abs(y_translate) >= 5)
 			{
+				y_translate = y_dir*RADIUS;
 				y_dir = -y_dir;
 			}
-			if (abs(z_translate) > 5)
+			if (abs(z_translate) >= 5)
 			{
+				z_translate = z_dir*RADIUS;
 				z_dir = -z_dir;
 			}
 			//randomize();
 		}
-		if (x_dir == 1)
-			x_translate += 0.1;
-		else if (x_dir == -1)
-			x_translate -= 0.1;
-		if (y_dir == 1)
-			y_translate += 0.1;
-		else if (y_dir == -1)
-			y_translate -= 0.1;
-		if (z_dir == 1)
-			z_translate += 0.1;
-		else if (z_dir == -1)
-			z_translate -= 0.1;
+		if(x_dir) x_translate += x_dir*0.1;
+		if(y_dir) y_translate += y_dir*0.1;
+		if(z_dir) z_translate += z_dir*0.1;
 	}
 
 	void run()
@@ -235,7 +229,7 @@ void drag_camera()
 	}
 }
 
-void lighting_init(void)
+void buffer_init(void)
 {
 	GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -246,9 +240,9 @@ void lighting_init(void)
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
+
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
 }
 
 void reshape_function(int w, int h)
@@ -272,6 +266,7 @@ void reshape_function(int w, int h)
 void display_function()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClearStencil(0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	if (int(INCLININATION) % 360 >= 90 && int(INCLININATION) % 360 <= 270)
@@ -279,15 +274,10 @@ void display_function()
 	else
 		UP_FLAG = 1;
 	//std::cout << UP_FLAG << std::endl;
+	// Print camera/up_flag to fix gimball lock
 	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, UP_FLAG, 0);
-	glStencilFunc(GL_ALWAYS, 1, 0xFF);
-	glStencilMask(0xFF);
+	glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
 	cube.run();
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	glStencilMask(0x00);
-	glDisable(GL_DEPTH_TEST);
-	glStencilFunc(GL_ALWAYS, 1, 0xFF);
-	glEnable(GL_DEPTH_TEST);
 	glutWireSphere(10, 25, 25);
 	glFlush();
 }
@@ -343,6 +333,23 @@ void mouse_control_function(int button, int action, int x, int y)
 	{
 		MOUSE_RIGHT_HELD_DOWN = false;
 	}
+	else if (button == GLUT_LEFT_BUTTON && action == GLUT_DOWN)
+	{
+		GLuint index;
+		glReadPixels(x, y, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+		//std::cout << index << std::endl;
+		switch (index)
+		{
+		case 1:
+			if (cube_flag)
+				cube.unpause_trans();
+			else
+				cube.pause_trans();
+			cube_flag = !cube_flag;
+		default:
+			break;
+		}
+	}
 }
 
 void mouse_drag_motion_function(int x, int y)
@@ -372,7 +379,7 @@ int main(int argc, char *argv[])
 	glutInitWindowSize(800, 800);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 	glutCreateWindow("OpenGL Assignment");
-	lighting_init();
+	buffer_init();
 	glutDisplayFunc(display_function);
 	glutReshapeFunc(reshape_function);
 	glutMouseFunc(mouse_control_function);
