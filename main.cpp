@@ -21,6 +21,7 @@ int MOUSE_X = 0;
 int MOUSE_Y = 0;
 int UP_FLAG = 1;
 
+bool toggle_wireframe = true;
 bool cube_flag = false;
 
 float rand_color_func()
@@ -42,6 +43,7 @@ class Cube
 	int x_dir = 0;
 	int y_dir = 0;
 	int z_dir = 0;
+	float scale_factor = 1;
 	void display()
 	{
 		glBegin(GL_TRIANGLES);
@@ -151,6 +153,7 @@ class Cube
 	{
 		glRotatef(rotate_angle, x_rotate, y_rotate, z_rotate);
 		glTranslatef(x_translate, y_translate, z_translate);
+		glScalef(scale_factor, scale_factor, scale_factor);
 	}
 
 public:
@@ -177,32 +180,92 @@ public:
 		pause = false;
 	}
 
+	void increment_x()
+	{
+		if (x_translate < RADIUS)
+			x_translate += 0.1;
+	}
+
+	void decrement_x()
+	{
+		if (x_translate > -RADIUS)
+			x_translate -= 0.1;
+	}
+
+	void increment_y()
+	{
+		if (y_translate < RADIUS)
+			y_translate += 0.1;
+	}
+
+	void decrement_y()
+	{
+		if (y_translate > -RADIUS)
+			y_translate -= 0.1;
+	}
+
+	void increment_z()
+	{
+		if (z_translate < RADIUS)
+			z_translate += 0.1;
+	}
+
+	void decrement_z()
+	{
+		if (z_translate > -RADIUS)
+			z_translate -= 0.1;
+	}
+
+	void increment_r()
+	{
+		rotate_angle = (rotate_angle + 1) % 360;
+	}
+
+	void decrement_r()
+	{
+		rotate_angle = (rotate_angle - 1) % 360;
+	}
+
+	void increment_s()
+	{
+		if(scale_factor < 5) scale_factor += 0.1;
+	}
+
+	void decrement_s()
+	{
+		if(scale_factor > 0.1) scale_factor -= 0.1;
+	}
+
 	void increment_trans()
 	{
-		if(pause) return;
+		if (pause)
+			return;
 		rotate_angle = (rotate_angle + 1) % 360;
 		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
 		{
 			if (abs(x_translate) >= 5)
 			{
-				x_translate = x_dir*RADIUS;
+				x_translate = x_dir * RADIUS;
 				x_dir = -x_dir;
 			}
 			if (abs(y_translate) >= 5)
 			{
-				y_translate = y_dir*RADIUS;
+				y_translate = y_dir * RADIUS;
 				y_dir = -y_dir;
 			}
 			if (abs(z_translate) >= 5)
 			{
-				z_translate = z_dir*RADIUS;
+				z_translate = z_dir * RADIUS;
 				z_dir = -z_dir;
 			}
 			//randomize();
 		}
-		if(x_dir) x_translate += x_dir*0.1;
-		if(y_dir) y_translate += y_dir*0.1;
-		if(z_dir) z_translate += z_dir*0.1;
+		if (x_dir)
+			x_translate += x_dir * 0.1;
+		if (y_dir)
+			y_translate += y_dir * 0.1;
+		if (z_dir)
+			z_translate += z_dir * 0.1;
 	}
 
 	void run()
@@ -278,7 +341,7 @@ void display_function()
 	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, UP_FLAG, 0);
 	glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
 	cube.run();
-	glutWireSphere(10, 25, 25);
+	if(toggle_wireframe) glutWireSphere(10, 25, 25);
 	glFlush();
 }
 
@@ -352,6 +415,58 @@ void mouse_control_function(int button, int action, int x, int y)
 	}
 }
 
+void custom_control_function(unsigned char key, int x, int y)
+{
+	switch (key)
+	{
+	case 'x':
+		if (cube_flag)
+			cube.increment_x();
+		break;
+	case 'X':
+		if (cube_flag)
+			cube.decrement_x();
+		break;
+	case 'y':
+		if (cube_flag)
+			cube.increment_y();
+		break;
+	case 'Y':
+		if (cube_flag)
+			cube.decrement_y();
+		break;
+	case 'z':
+		if (cube_flag)
+			cube.increment_z();
+		break;
+	case 'Z':
+		if (cube_flag)
+			cube.decrement_z();
+		break;
+	case 'r':
+		if (cube_flag)
+			cube.increment_r();
+		break;
+	case 'R':
+		if (cube_flag)
+			cube.decrement_r();
+		break;
+	case 's':
+		if(cube_flag)
+			cube.increment_s();
+		break;
+	case 'S':
+		if(cube_flag)
+			cube.decrement_s();
+		break;
+	case 't':
+		toggle_wireframe = !toggle_wireframe;
+		break;
+	default:
+		break;
+	}
+}
+
 void mouse_drag_motion_function(int x, int y)
 {
 	MOUSE_X = x;
@@ -382,6 +497,7 @@ int main(int argc, char *argv[])
 	buffer_init();
 	glutDisplayFunc(display_function);
 	glutReshapeFunc(reshape_function);
+	glutKeyboardFunc(custom_control_function);
 	glutMouseFunc(mouse_control_function);
 	//glutPassiveMotionFunc(mouse_motion_function);
 	glutMotionFunc(mouse_drag_motion_function);
