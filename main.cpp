@@ -13,7 +13,7 @@ double CAM_Z = 1;
 float INCLININATION = 0;
 float AZIMUTH = 0;
 int RADIUS = 5;
-float ZOOM = 10;
+float ZOOM = 12;
 int WIDTH = 0;
 int HEIGHT = 0;
 bool MOUSE_RIGHT_HELD_DOWN = false;
@@ -29,6 +29,20 @@ bool hex_flag = false;
 float rand_color_func()
 {
 	return (float)rand() / (float)RAND_MAX;
+}
+
+double * calc_normal(double * a, double * b, double * c){
+	double i1 = b[0]-a[0];
+	double j1 = b[1]-a[1];
+	double k1 = b[2]-a[2];
+	double i2 = c[0]-b[0];
+	double j2 = c[1]-b[1];
+	double k2 = c[2]-b[2];
+	double * d = (double *)malloc(3*sizeof(double));
+	d[0] = j1*k2 - k1*j2;
+	d[1] = i1*k2 - k1*i2;
+	d[2] = i1*j2 - j1*i2;
+	return d;
 }
 
 class HexagonalPrism
@@ -52,13 +66,14 @@ class HexagonalPrism
 			{0,1,2,3,4,5},
 			{6,7,8,9,10,11},	
 		};
+
 	int sqr_faces[6][4] = {
 		{0,6,7,1},
 		{7,1,2,8},
 		{8,2,3,9},
 		{9,3,4,10},
 		{10,4,5,11},
-		{11,5,6,0}
+		{11,6,5,0}
 	};
 
 	double hex_points[12][3] =
@@ -82,6 +97,7 @@ class HexagonalPrism
 	{
 		for(int i = 0; i < 2; i++){
 			glBegin(GL_TRIANGLE_FAN);
+			glNormal3fv((GLfloat *)calc_normal(hex_points[hex_faces[i][0]],hex_points[hex_faces[i][1]],hex_points[hex_faces[i][2]]));
 			for(int j = 0; j < 6; j++){
 				glVertex3dv(hex_points[hex_faces[i][j]]);
 				glColor3fv(rand_colors[i]);
@@ -90,6 +106,7 @@ class HexagonalPrism
 		}
 		for(int i = 0; i < 6; i++){
 			glBegin(GL_TRIANGLE_FAN);
+			glNormal3fv((GLfloat *)calc_normal(hex_points[sqr_faces[i][0]],hex_points[sqr_faces[i][1]],hex_points[sqr_faces[i][2]]));
 			for(int j = 0; j < 4; j++){
 				glVertex3dv(hex_points[sqr_faces[i][j]]);
 				glColor3fv(rand_colors[i*j+2]);
@@ -304,7 +321,7 @@ class Dodecahedron
 		{
 			//glColor3f(0.0, 0.1, 0.1);
 			glBegin(GL_TRIANGLE_FAN);
-			glShadeModel(GL_FLAT);
+			glNormal3fv((GLfloat *)calc_normal(dod_points[dod_faces[i][0]],dod_points[dod_faces[i][1]],dod_points[dod_faces[i][2]]));
 			for (int j = 0; j < 5; j++){
 				glVertex3dv(dod_points[dod_faces[i][j]]);
 				glColor3fv(rand_colors[j*i]);
@@ -453,9 +470,9 @@ public:
 		//glRotatef(this->rotate_angle, 1, 0, 0);
 		transforms();
 		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-		GLfloat mat_shininess[] = {3.0};
-		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+		GLfloat mat_shininess[] = {50.0};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
 		display();
 		glPopMatrix();
 	}
@@ -729,7 +746,7 @@ void drag_camera()
 void buffer_init(void)
 {
 	GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
-	glClearColor(1.0, 1.0, 1.0, 0.0);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glShadeModel(GL_SMOOTH);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
