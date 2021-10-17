@@ -23,11 +23,228 @@ int UP_FLAG = 1;
 
 bool toggle_wireframe = true;
 bool cube_flag = false;
+bool dod_flag = false;
 
 float rand_color_func()
 {
 	return (float)rand() / (float)RAND_MAX;
 }
+class Dodecahedron
+{
+	bool pause;
+	int rotate_angle;
+	float rand_colors[40][3];
+	int x_rotate = 0;
+	int y_rotate = 0;
+	int z_rotate = 0;
+	float x_translate = 0;
+	float y_translate = 0;
+	float z_translate = 0;
+	int x_dir = 0;
+	int y_dir = 0;
+	int z_dir = 0;
+	float scale_factor = 1;
+
+	int dod_faces[12][5] =
+		{
+			{0, 16, 2, 10, 8},
+			{0, 8, 4, 14, 12},
+			{16, 17, 1, 12, 0},
+			{1, 9, 11, 3, 17},
+			{1, 12, 14, 5, 9},
+			{2, 13, 15, 6, 10},
+			{13, 3, 17, 16, 2},
+			{3, 11, 7, 15, 13},
+			{4, 8, 10, 6, 18},
+			{14, 5, 19, 18, 4},
+			{5, 19, 7, 11, 9},
+			{15, 7, 19, 18, 6}};
+
+	double dod_points[20][3] =
+		{
+			{1, 1, 1},
+			{1, 1, -1},
+			{1, -1, 1},
+			{1, -1, -1},
+			{-1, 1, 1},
+			{-1, 1, -1},
+			{-1, -1, 1},
+			{-1, -1, -1},
+			{0, 0.618, 1.618},
+			{0, 0.618, -1.618},
+			{0, -0.618, 1.618},
+			{0, -0.618, -1.618},
+			{0.618, 1.618, 0},
+			{0.618, -1.618, 0},
+			{-0.618, 1.618, 0},
+			{-0.618, -1.618, 0},
+			{1.618, 0, 0.618},
+			{1.618, 0, -0.618},
+			{-1.618, 0, 0.618},
+			{-1.618, 0, -0.618}};
+
+	void display()
+	{
+		for (int i = 0; i < 12; i++)
+		{
+			//glColor3f(0.0, 0.1, 0.1);
+			glBegin(GL_TRIANGLE_FAN);
+			glShadeModel(GL_FLAT);
+			for (int x = 0; x < 5; x++){
+				glVertex3dv(dod_points[dod_faces[i][x]]);
+				glColor3fv(rand_colors[x*i]);
+			}
+			glEnd();
+			//glColor3f(0.0, 1.0, 1.0);
+
+		}
+	}
+
+	void randomize()
+	{
+		srand(time(NULL));
+		x_rotate = rand() % 2;
+		y_rotate = rand() % 2;
+		z_rotate = rand() % 2;
+		x_dir = rand() % 3 - 1;
+		y_dir = rand() % 3 - 1;
+		z_dir = rand() % 3 - 1;
+	}
+
+	void transforms()
+	{
+		glRotatef(rotate_angle, x_rotate, y_rotate, z_rotate);
+		glTranslatef(x_translate, y_translate, z_translate);
+		glScalef(scale_factor, scale_factor, scale_factor);
+	}
+
+public:
+	Dodecahedron()
+	{
+		rotate_angle = 0;
+		for (int i = 0; i < 40; i++)
+		{
+			rand_colors[i][0] = rand_color_func();
+			rand_colors[i][1] = rand_color_func();
+			rand_colors[i][2] = rand_color_func();
+		}
+		pause = false;
+		randomize();
+	}
+
+	void pause_trans()
+	{
+		pause = true;
+	}
+
+	void unpause_trans()
+	{
+		pause = false;
+	}
+
+	void increment_x()
+	{
+		if (x_translate < RADIUS)
+			x_translate += 0.1;
+	}
+
+	void decrement_x()
+	{
+		if (x_translate > -RADIUS)
+			x_translate -= 0.1;
+	}
+
+	void increment_y()
+	{
+		if (y_translate < RADIUS)
+			y_translate += 0.1;
+	}
+
+	void decrement_y()
+	{
+		if (y_translate > -RADIUS)
+			y_translate -= 0.1;
+	}
+
+	void increment_z()
+	{
+		if (z_translate < RADIUS)
+			z_translate += 0.1;
+	}
+
+	void decrement_z()
+	{
+		if (z_translate > -RADIUS)
+			z_translate -= 0.1;
+	}
+
+	void increment_r()
+	{
+		rotate_angle = (rotate_angle + 1) % 360;
+	}
+
+	void decrement_r()
+	{
+		rotate_angle = (rotate_angle - 1) % 360;
+	}
+
+	void increment_s()
+	{
+		if (scale_factor < 5)
+			scale_factor += 0.1;
+	}
+
+	void decrement_s()
+	{
+		if (scale_factor > 0.1)
+			scale_factor -= 0.1;
+	}
+
+	void increment_trans()
+	{
+		if (pause)
+			return;
+		rotate_angle = (rotate_angle + 1) % 360;
+		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
+		{
+			if (abs(x_translate) >= 5)
+			{
+				x_translate = x_dir * RADIUS;
+				x_dir = -x_dir;
+			}
+			if (abs(y_translate) >= 5)
+			{
+				y_translate = y_dir * RADIUS;
+				y_dir = -y_dir;
+			}
+			if (abs(z_translate) >= 5)
+			{
+				z_translate = z_dir * RADIUS;
+				z_dir = -z_dir;
+			}
+			//randomize();
+		}
+		if (x_dir)
+			x_translate += x_dir * 0.1;
+		if (y_dir)
+			y_translate += y_dir * 0.1;
+		if (z_dir)
+			z_translate += z_dir * 0.1;
+	}
+
+	void run()
+	{
+		glPushMatrix();
+		//glRotatef(this->rotate_angle, 1, 0, 0);
+		transforms();
+		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+		GLfloat mat_shininess[] = {3.0};
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+		display();
+		glPopMatrix();
+	}
+} dod;
 
 class Cube
 {
@@ -140,7 +357,7 @@ class Cube
 
 	void randomize()
 	{
-		srand(time(NULL));
+		srand(time(NULL)+5);
 		x_rotate = rand() % 2;
 		y_rotate = rand() % 2;
 		z_rotate = rand() % 2;
@@ -228,12 +445,14 @@ public:
 
 	void increment_s()
 	{
-		if(scale_factor < 5) scale_factor += 0.1;
+		if (scale_factor < 5)
+			scale_factor += 0.1;
 	}
 
 	void decrement_s()
 	{
-		if(scale_factor > 0.1) scale_factor -= 0.1;
+		if (scale_factor > 0.1)
+			scale_factor -= 0.1;
 	}
 
 	void increment_trans()
@@ -303,7 +522,7 @@ void buffer_init(void)
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
-
+	glShadeModel(GL_FLAT);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 }
@@ -341,7 +560,10 @@ void display_function()
 	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, UP_FLAG, 0);
 	glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
 	cube.run();
-	if(toggle_wireframe) glutWireSphere(10, 25, 25);
+	glStencilFunc(GL_ALWAYS, 2, 0xFFFF);
+	dod.run();
+	if (toggle_wireframe)
+		glutWireSphere(10, 25, 25);
 	glFlush();
 }
 
@@ -355,6 +577,7 @@ void timer_function(int t)
 	drag_camera();
 	glutPostRedisplay();
 	cube.increment_trans();
+	dod.increment_trans();
 	glutTimerFunc(17, timer_function, t);
 }
 
@@ -409,6 +632,14 @@ void mouse_control_function(int button, int action, int x, int y)
 			else
 				cube.pause_trans();
 			cube_flag = !cube_flag;
+			break;
+		case 2:
+			if(dod_flag)
+				dod.unpause_trans();
+			else
+				dod.pause_trans();
+			dod_flag = !dod_flag;
+			break;
 		default:
 			break;
 		}
@@ -422,42 +653,63 @@ void custom_control_function(unsigned char key, int x, int y)
 	case 'x':
 		if (cube_flag)
 			cube.increment_x();
+		if (dod_flag)
+			dod.increment_x();
+
 		break;
 	case 'X':
 		if (cube_flag)
 			cube.decrement_x();
+		if (dod_flag)
+			dod.decrement_x();
 		break;
 	case 'y':
 		if (cube_flag)
 			cube.increment_y();
+		if (dod_flag)
+			dod.increment_y();
 		break;
 	case 'Y':
 		if (cube_flag)
 			cube.decrement_y();
+		if (dod_flag)
+			dod.decrement_y();
 		break;
 	case 'z':
 		if (cube_flag)
 			cube.increment_z();
+		if (dod_flag)
+			dod.increment_z();
 		break;
 	case 'Z':
 		if (cube_flag)
 			cube.decrement_z();
+		if (dod_flag)
+			dod.decrement_z();
 		break;
 	case 'r':
 		if (cube_flag)
 			cube.increment_r();
+		if (dod_flag)
+			dod.increment_r();
 		break;
 	case 'R':
 		if (cube_flag)
 			cube.decrement_r();
+		if (dod_flag)
+			dod.decrement_r();
 		break;
 	case 's':
-		if(cube_flag)
+		if (cube_flag)
 			cube.increment_s();
+		if (dod_flag)
+			dod.increment_s();
 		break;
 	case 'S':
-		if(cube_flag)
+		if (cube_flag)
 			cube.decrement_s();
+		if (dod_flag)
+			dod.decrement_s();
 		break;
 	case 't':
 		toggle_wireframe = !toggle_wireframe;
