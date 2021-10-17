@@ -332,7 +332,7 @@ void display_function()
 	glClearStencil(0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	if (int(INCLININATION) % 360 >= 90 && int(INCLININATION) % 360 <= 270)
+	if (abs(int(INCLININATION)) % 360 >= 90 && abs(int(INCLININATION)) % 360 <= 270)
 		UP_FLAG = -1;
 	else
 		UP_FLAG = 1;
@@ -471,7 +471,6 @@ void mouse_drag_motion_function(int x, int y)
 {
 	MOUSE_X = x;
 	MOUSE_Y = y;
-	//std::cout << MOUSE_X << " " << MOUSE_Y << std::endl;
 }
 
 void mouse_zoom_function(int wheel, int direction, int x, int y)
