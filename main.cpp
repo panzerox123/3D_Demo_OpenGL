@@ -26,22 +26,33 @@ bool cube_flag = false;
 bool dod_flag = false;
 bool hex_flag = false;
 
+int toggle_cube = true;
+int toggle_dod = true;
+int toggle_hex = true;
+
+int MAIN_MENU;
+int CLEAR_COLOR_MENU;
+int TOGGLE_SHAPE;
+
+float CLEAR_COLOR[4] = {0.0, 0.0, 0.0, 0.0};
+
 float rand_color_func()
 {
 	return (float)rand() / (float)RAND_MAX;
 }
 
-double * calc_normal(double * a, double * b, double * c){
-	double i1 = b[0]-a[0];
-	double j1 = b[1]-a[1];
-	double k1 = b[2]-a[2];
-	double i2 = c[0]-b[0];
-	double j2 = c[1]-b[1];
-	double k2 = c[2]-b[2];
-	double * d = (double *)malloc(3*sizeof(double));
-	d[0] = j1*k2 - k1*j2;
-	d[1] = i1*k2 - k1*i2;
-	d[2] = i1*j2 - j1*i2;
+double *calc_normal(double *a, double *b, double *c)
+{
+	double i1 = b[0] - a[0];
+	double j1 = b[1] - a[1];
+	double k1 = b[2] - a[2];
+	double i2 = b[0] - c[0];
+	double j2 = b[1] - c[1];
+	double k2 = b[2] - c[2];
+	double *d = (double *)malloc(3 * sizeof(double));
+	d[0] = j1 * k2 - k1 * j2;
+	d[1] = i1 * k2 - k1 * i2;
+	d[2] = i1 * j2 - j1 * i2;
 	return d;
 }
 
@@ -63,53 +74,56 @@ class HexagonalPrism
 
 	int hex_faces[2][6] =
 		{
-			{0,1,2,3,4,5},
-			{6,7,8,9,10,11},	
-		};
+			{0, 1, 2, 3, 4, 5},
+			{6, 7, 8, 9, 10, 11},
+	};
 
 	int sqr_faces[6][4] = {
-		{0,6,7,1},
-		{7,1,2,8},
-		{8,2,3,9},
-		{9,3,4,10},
-		{10,4,5,11},
-		{11,6,5,0}
-	};
+		{0, 6, 7, 1},
+		{7, 1, 2, 8},
+		{8, 2, 3, 9},
+		{9, 3, 4, 10},
+		{10, 4, 5, 11},
+		{11, 6, 0, 5}};
 
 	double hex_points[12][3] =
 		{
-			{0,2,1},
-			{1,1,1},
-			{1,-1,1},
-			{0,-2,1},
-			{-1,-1,1},
-			{-1,1,1},
-			{0,2,-1},
-			{1,1,-1},
-			{1,-1,-1},
-			{0,-2,-1},
-			{-1,-1,-1},
-			{-1,1,-1},
-	
-		};
+			{0, 2, 1},
+			{1, 1, 1},
+			{1, -1, 1},
+			{0, -2, 1},
+			{-1, -1, 1},
+			{-1, 1, 1},
+			{0, 2, -1},
+			{1, 1, -1},
+			{1, -1, -1},
+			{0, -2, -1},
+			{-1, -1, -1},
+			{-1, 1, -1},
+
+	};
 
 	void display()
 	{
-		for(int i = 0; i < 2; i++){
+		for (int i = 0; i < 2; i++)
+		{
 			glBegin(GL_TRIANGLE_FAN);
-			glNormal3fv((GLfloat *)calc_normal(hex_points[hex_faces[i][0]],hex_points[hex_faces[i][1]],hex_points[hex_faces[i][2]]));
-			for(int j = 0; j < 6; j++){
+			//glNormal3fv((GLfloat *)calc_normal(hex_points[hex_faces[i][0]],hex_points[hex_faces[i][1]],hex_points[hex_faces[i][2]]));
+			for (int j = 0; j < 6; j++)
+			{
 				glVertex3dv(hex_points[hex_faces[i][j]]);
 				glColor3fv(rand_colors[i]);
 			}
 			glEnd();
 		}
-		for(int i = 0; i < 6; i++){
+		for (int i = 0; i < 6; i++)
+		{
 			glBegin(GL_TRIANGLE_FAN);
-			glNormal3fv((GLfloat *)calc_normal(hex_points[sqr_faces[i][0]],hex_points[sqr_faces[i][1]],hex_points[sqr_faces[i][2]]));
-			for(int j = 0; j < 4; j++){
+			//glNormal3fv((GLfloat *)calc_normal(hex_points[sqr_faces[i][0]],hex_points[sqr_faces[i][1]],hex_points[sqr_faces[i][2]]));
+			for (int j = 0; j < 4; j++)
+			{
 				glVertex3dv(hex_points[sqr_faces[i][j]]);
-				glColor3fv(rand_colors[i*j+2]);
+				glColor3fv(rand_colors[i * j + 2]);
 			}
 			glEnd();
 		}
@@ -117,7 +131,7 @@ class HexagonalPrism
 
 	void randomize()
 	{
-		srand(time(NULL)+10);
+		srand(time(NULL) + 10);
 		x_rotate = rand() % 2;
 		y_rotate = rand() % 2;
 		z_rotate = rand() % 2;
@@ -222,17 +236,17 @@ public:
 		rotate_angle = (rotate_angle + 1) % 360;
 		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
 		{
-			if (abs(x_translate) >= 5)
+			if (abs(x_translate) >= RADIUS)
 			{
 				x_translate = x_dir * RADIUS;
 				x_dir = -x_dir;
 			}
-			if (abs(y_translate) >= 5)
+			if (abs(y_translate) >= RADIUS)
 			{
 				y_translate = y_dir * RADIUS;
 				y_dir = -y_dir;
 			}
-			if (abs(z_translate) >= 5)
+			if (abs(z_translate) >= RADIUS)
 			{
 				z_translate = z_dir * RADIUS;
 				z_dir = -z_dir;
@@ -252,10 +266,14 @@ public:
 		glPushMatrix();
 		//glRotatef(this->rotate_angle, 1, 0, 0);
 		transforms();
-		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+		GLfloat mat_specular[] = {0.5, 0.5, 0.5, 1.0};
+		GLfloat mat_ambient[] = {1,1,1,1};
+		GLfloat mat_diffuse[] = {1,1,1,1};
 		GLfloat mat_shininess[] = {3.0};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 		display();
 		glPopMatrix();
 	}
@@ -321,14 +339,14 @@ class Dodecahedron
 		{
 			//glColor3f(0.0, 0.1, 0.1);
 			glBegin(GL_TRIANGLE_FAN);
-			glNormal3fv((GLfloat *)calc_normal(dod_points[dod_faces[i][0]],dod_points[dod_faces[i][1]],dod_points[dod_faces[i][2]]));
-			for (int j = 0; j < 5; j++){
+			//glNormal3fv((GLfloat *)calc_normal(dod_points[dod_faces[i][0]],dod_points[dod_faces[i][1]],dod_points[dod_faces[i][2]]));
+			for (int j = 0; j < 5; j++)
+			{
 				glVertex3dv(dod_points[dod_faces[i][j]]);
-				glColor3fv(rand_colors[j*i]);
+				glColor3fv(rand_colors[j * i]);
 			}
 			glEnd();
 			//glColor3f(0.0, 1.0, 1.0);
-
 		}
 	}
 
@@ -439,17 +457,17 @@ public:
 		rotate_angle = (rotate_angle + 1) % 360;
 		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
 		{
-			if (abs(x_translate) >= 5)
+			if (abs(x_translate) >= RADIUS)
 			{
 				x_translate = x_dir * RADIUS;
 				x_dir = -x_dir;
 			}
-			if (abs(y_translate) >= 5)
+			if (abs(y_translate) >= RADIUS)
 			{
 				y_translate = y_dir * RADIUS;
 				y_dir = -y_dir;
 			}
-			if (abs(z_translate) >= 5)
+			if (abs(z_translate) >= RADIUS)
 			{
 				z_translate = z_dir * RADIUS;
 				z_dir = -z_dir;
@@ -470,9 +488,9 @@ public:
 		//glRotatef(this->rotate_angle, 1, 0, 0);
 		transforms();
 		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-		GLfloat mat_shininess[] = {50.0};
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+		GLfloat mat_shininess[] = {127.0};
+		glMaterialfv(GL_FRONT_FACE, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT_FACE, GL_SHININESS, mat_shininess);
 		display();
 		glPopMatrix();
 	}
@@ -589,7 +607,7 @@ class Cube
 
 	void randomize()
 	{
-		srand(time(NULL)+5);
+		srand(time(NULL) + 5);
 		x_rotate = rand() % 2;
 		y_rotate = rand() % 2;
 		z_rotate = rand() % 2;
@@ -694,17 +712,17 @@ public:
 		rotate_angle = (rotate_angle + 1) % 360;
 		if (abs(x_translate) >= RADIUS || abs(y_translate) >= RADIUS || abs(z_translate) >= RADIUS)
 		{
-			if (abs(x_translate) >= 5)
+			if (abs(x_translate) >= RADIUS)
 			{
 				x_translate = x_dir * RADIUS;
 				x_dir = -x_dir;
 			}
-			if (abs(y_translate) >= 5)
+			if (abs(y_translate) >= RADIUS)
 			{
 				y_translate = y_dir * RADIUS;
 				y_dir = -y_dir;
 			}
-			if (abs(z_translate) >= 5)
+			if (abs(z_translate) >= RADIUS)
 			{
 				z_translate = z_dir * RADIUS;
 				z_dir = -z_dir;
@@ -725,7 +743,7 @@ public:
 		//glRotatef(this->rotate_angle, 1, 0, 0);
 		transforms();
 		GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-		GLfloat mat_shininess[] = {3.0};
+		GLfloat mat_shininess[] = {12.0};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 		display();
@@ -745,18 +763,19 @@ void drag_camera()
 
 void buffer_init(void)
 {
-	GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glShadeModel(GL_SMOOTH);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	glEnable(GL_LIGHTING);
+	GLfloat light0_position[] = {1.0, 1.0, 1.0, 0.0};
+	GLfloat light1_position[] = {-1.0, -1.0, -1.0, 0.0};
+	GLfloat light2_position[] = {1.0, 1.0, 1.0, 0.0};
+	glClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3]);
+	glShadeModel(GL_FLAT);
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+	glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
+	//glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
 	glShadeModel(GL_FLAT);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 }
 
 void reshape_function(int w, int h)
@@ -779,6 +798,7 @@ void reshape_function(int w, int h)
 
 void display_function()
 {
+	glClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glClearStencil(0);
 	glMatrixMode(GL_MODELVIEW);
@@ -790,14 +810,29 @@ void display_function()
 	//std::cout << UP_FLAG << std::endl;
 	// Print camera/up_flag to fix gimball lock
 	gluLookAt(CAM_X, CAM_Y, CAM_Z, 0, 0, 0, 0, UP_FLAG, 0);
-	glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
-	cube.run();
-	glStencilFunc(GL_ALWAYS, 2, 0xFFFF);
-	dod.run();
-	glStencilFunc(GL_ALWAYS, 3, 0xFFFF);
-	hex.run();
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	if (toggle_cube)
+	{
+		glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
+		cube.run();
+	}
+	if (toggle_dod)
+	{
+		glStencilFunc(GL_ALWAYS, 2, 0xFFFF);
+		dod.run();
+	}
+	if (toggle_hex)
+	{
+		glStencilFunc(GL_ALWAYS, 3, 0xFFFF);
+		hex.run();
+	}
+	glDisable(GL_STENCIL_TEST);
 	if (toggle_wireframe)
-		glutWireSphere(10, 25, 25);
+	{
+		glColor4f(1, 0, 0, 0);
+		glutWireSphere(2 * RADIUS, 25, 25);
+	}
 	glFlush();
 }
 
@@ -869,14 +904,14 @@ void mouse_control_function(int button, int action, int x, int y)
 			cube_flag = !cube_flag;
 			break;
 		case 2:
-			if(dod_flag)
+			if (dod_flag)
 				dod.unpause_trans();
 			else
 				dod.pause_trans();
 			dod_flag = !dod_flag;
 			break;
 		case 3:
-			if(hex_flag)
+			if (hex_flag)
 				hex.unpause_trans();
 			else
 				hex.pause_trans();
@@ -999,6 +1034,86 @@ void mouse_zoom_function(int wheel, int direction, int x, int y)
 	}
 }
 
+void menuFunc(int value)
+{
+	switch (value)
+	{
+	case 0:
+		exit(0);
+		break;
+	case 1:
+		RADIUS++;
+		break;
+	case 2:
+		if (RADIUS > 1)
+			RADIUS--;
+		break;
+	case 3:
+		CLEAR_COLOR[0] = 1;
+		CLEAR_COLOR[1] = 1;
+		CLEAR_COLOR[2] = 1;
+		CLEAR_COLOR[3] = 0;
+		break;
+	case 4:
+		CLEAR_COLOR[0] = 1;
+		CLEAR_COLOR[1] = 0;
+		CLEAR_COLOR[2] = 0;
+		CLEAR_COLOR[3] = 0;
+		break;
+	case 5:
+		CLEAR_COLOR[0] = 0;
+		CLEAR_COLOR[1] = 1;
+		CLEAR_COLOR[2] = 0;
+		CLEAR_COLOR[3] = 0;
+		break;
+	case 6:
+		CLEAR_COLOR[0] = 0;
+		CLEAR_COLOR[1] = 0;
+		CLEAR_COLOR[2] = 1;
+		CLEAR_COLOR[3] = 0;
+		break;
+	case 7:
+		CLEAR_COLOR[0] = 0;
+		CLEAR_COLOR[1] = 0;
+		CLEAR_COLOR[2] = 0;
+		CLEAR_COLOR[3] = 0;
+		break;
+	case 8:
+		toggle_cube = !toggle_cube;
+		break;
+	case 9:
+		toggle_dod = !toggle_dod;
+		break;
+	case 10:
+		toggle_hex = !toggle_hex;
+		break;
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}
+
+void createMenu()
+{
+	CLEAR_COLOR_MENU = glutCreateMenu(menuFunc);
+	glutAddMenuEntry("White", 3);
+	glutAddMenuEntry("Red", 4);
+	glutAddMenuEntry("Green", 5);
+	glutAddMenuEntry("Blue", 6);
+	glutAddMenuEntry("Black", 7);
+	TOGGLE_SHAPE = glutCreateMenu(menuFunc);
+	glutAddMenuEntry("Toggle Cube", 8);
+	glutAddMenuEntry("Toggle Dodecahedron", 9);
+	glutAddMenuEntry("Toggle Hexagonal Prism", 10);
+	MAIN_MENU = glutCreateMenu(menuFunc);
+	glutAddMenuEntry("Increase Sphere Radius", 1);
+	glutAddMenuEntry("Decrease Sphere Radius", 2);
+	glutAddSubMenu("Change Clear Color", CLEAR_COLOR_MENU);
+	glutAddSubMenu("Toggle Shapes", TOGGLE_SHAPE);
+	glutAddMenuEntry("Exit", 0);
+	glutAttachMenu(GLUT_MIDDLE_BUTTON);
+}
+
 int main(int argc, char *argv[])
 {
 	srand(time(NULL));
@@ -1007,6 +1122,7 @@ int main(int argc, char *argv[])
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 	glutCreateWindow("OpenGL Assignment");
 	buffer_init();
+	createMenu();
 	glutDisplayFunc(display_function);
 	glutReshapeFunc(reshape_function);
 	glutKeyboardFunc(custom_control_function);
